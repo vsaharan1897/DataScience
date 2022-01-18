@@ -1,0 +1,60 @@
+---
+title: "HW#12"
+author: "Vishesh Saharan"
+date: "2/17/2019"
+output: html_document
+---
+
+## Problem 3.32b
+```{r}
+n <- 700   
+u <- 160 
+lambda = n/u
+bowls <- rep(0,u)  
+
+for (i in 1:n)
+{
+	i <- sample(1:u,1)  
+	bowls[i] <- bowls[i] + 1   
+}
+
+bowls  
+table(bowls)  
+
+round(dpois(0:max(bowls),lambda)*u,2)
+
+print ("P between 3 and 6 cells simulate")
+sum(table(bowls)[3:6]) /160
+print ("P between 3 and 6 based on Poisson mode")
+```
+
+
+#Problem 3.43
+```{r}
+n <- 500   
+u <- 100  
+lambda = n/u
+
+
+bowls <- rep(0,u)  
+
+for (i in 1:n)
+{
+	i <- sample(1:u,1) 
+	bowls[i] <- bowls[i] + 1 
+}
+
+
+table(bowls)  
+
+sum(bowls%%2==1) /u
+sum(bowls%%2==0) /u
+
+odds <- 1:round(max(bowls)/2)*2-1
+sum(round(dpois(0:max(bowls),lambda)*u,2)[odds])/100
+value <- (1 - exp(-2*lambda)) / 2
+value
+```
+
+
+
