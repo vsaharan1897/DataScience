@@ -12,7 +12,7 @@ def filter_company(data,company):
     return filtered_data
 
 def read_stock_data(symbol):
-    data = pd.read_csv('psa.csv')
+    data = pd.read_csv('psa.csv')  #### Contact for CSV File
     stock_data = data[data['symbol'] == symbol]
     return stock_data['close'].tolist()
 
