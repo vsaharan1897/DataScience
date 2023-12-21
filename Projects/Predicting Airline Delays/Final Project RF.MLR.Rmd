@@ -1,0 +1,151 @@
+---
+title: "Final Project"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+date: "2023-05-26"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+
+#THIS FILE IS MLR ONLY 
+FixedAirlineData<-read.csv("CleanAccurate2019.csv")
+x<-FixedAirlineData[c('DEP_DELAY','DEP_TIME','TAXI_OUT','TAXI_IN','ARR_TIME','AIR_TIME','DISTANCE','CARRIER_DELAY',
+                      'WEATHER_DELAY','NAS_DELAY','SECURITY_DELAY',
+                      'LATE_AIRCRAFT_DELAY','ARR_DELAY','ProperDepartureTimes6',
+                      'ProperArrivalTimes6')]
+y<-FixedAirlineData[c('ARR_DELAY','ProperArrivalTimes6')]
+
+```
+
+
+```{r}
+library(caret)
+
+# Splitting the data into training and test sets
+set.seed(122515)  # Equivalent to random_state in Python
+
+train_indices <- createDataPartition(y, p = 0.7, list = FALSE)  # 70% for training
+xtrain <- x[train_indices, ]
+ytrain <- y[train_indices]
+
+xtest <- x[-train_indices, ]
+ytest <- y[-train_indices]
+
+# Printing the shapes of the training and test sets
+cat("xtrain shape:", dim(xtrain), "\n")
+cat("xtest shape:", dim(xtest), "\n")
+cat("ytrain shape:", length(ytrain), "\n")
+cat("ytest shape:", length(ytest), "\n")
+
+
+```
+
+```{r}
+head(train_indices,10)
+head(ytest,10)
+head(ytrain,10)
+head(xtrain,10)
+head(xtest,10)
+```
+
+
+```{r}
+# Import the required library
+library(caret)
+
+# Create a linear regression model object
+lm_model <- lm(ytrain ~ ., data = xtrain)
+
+# Print the model summary
+summary(lm_model)
+
+
+intercept <- coef(lm_model)[1]
+coefficients <- coef(lm_model)
+
+# Print the intercept term
+cat("Intercept:", intercept, "\n")
+print(coefficients)
+```
+
+
+```{r}
+xtrain$ProperDepartureTimes6 <- as.character(xtrain$ProperDepartureTimes6)
+xtest$ProperDepartureTimes6 <- factor(xtest$ProperDepartureTimes6, levels = levels(xtrain$ProperDepartureTimes6))
+xtrain$ProperArrivalTimes6 <- as.character(xtrain$ProperArrivalTimes6)
+xtest$ProperArrivalTimes6 <- factor(xtest$ProperArrivalTimes6, levels = levels(xtrain$ProperArrivalTimes6))
+b <- predict(lm_model, newdata = xtest)
+head(b,10)
+```
+
+```{r}
+missing_values <- is.na(ytest) | is.na(b)
+ytest <- as.numeric(ytest[!missing_values])
+b <- as.numeric(b[!missing_values])
+rss <- sum((ytest - b)^2)  # Residual sum of squares
+tss <- sum((ytest - mean(ytest))^2)  # Total sum of squares
+r_squared <-1-(100-(rss / tss))/100
+
+# Print the R-squared value
+print(r_squared)
+
+```
+```{r}
+# Calculate MSE
+mse <- mean((ytest - b)^2)
+
+# Calculate RMSE
+rmse <- sqrt(mse)
+
+# Print the RMSE value
+print(rmse)
+
+```
+```{r}
+FixedAirlineData$ProperDepartureTimes6 <- as.character(FixedAirlineData$ProperDepartureTimes6)
+FixedAirlineData$ProperDepartureTimes6 <- factor(FixedAirlineData$ProperDepartureTimes6, levels = levels(FixedAirlineData$ProperDepartureTimes6))
+FixedAirlineData$ProperArrivalTimes6 <- as.character(FixedAirlineData$ProperArrivalTimes6)
+FixedAirlineData$ProperArrivalTimes6 <- factor(FixedAirlineData$ProperArrivalTimes6, levels = levels(FixedAirlineData$ProperArrivalTimes6))
+FixedAirlineData$ARR_DELAY <- as.numeric(as.character(FixedAirlineData$ARR_DELAY))
+a = predict(lm_model, newdata=FixedAirlineData)
+head(a,10)
+```
+
+```{r}
+mlr_Airline=FixedAirlineData
+mlr_Airline['MLR_Prediction']=a
+head(mlr_Airline['MLR_Prediction'],10)
+```
+
+```{r}
+library(dplyr)
+
+Airline_Results <- mlr_Airline %>%
+  filter(MLR_Prediction == a) %>%
+  select(OP_UNIQUE_CARRIER, ORIGIN, DEST, MLR_Prediction) %>%
+  arrange(OP_UNIQUE_CARRIER) 
+
+head(Airline_Results,10)
+
+```
+
+
+```{r}
+positive_valuesMLR <- Airline_Results$MLR_Prediction[Airline_Results$MLR_Prediction >= 0]
+negative_valuesMLR <- Airline_Results$MLR_Prediction[Airline_Results$MLR_Prediction < 0]
+
+length(positive_valuesMLR)
+length(negative_valuesMLR)
+percentnegatvieMLR<-length(negative_valuesMLR)/(length(negative_valuesMLR)+length(positive_valuesMLR))
+print(percentnegatvieMLR)
+print(1-percentnegatvieMLR)
+```
+

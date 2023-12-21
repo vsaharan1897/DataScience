@@ -1,0 +1,133 @@
+---
+title: "Final Project Data Cleaning"
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-05-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+#Try and get Scheduled Arrival and Departure Time
+
+AirlineData<-read.csv("2019OG.csv")
+Filtered_AD <- AirlineData[AirlineData$ARR_TIME >= 100 & AirlineData$DEP_TIME>=100 &AirlineData$DEP_TIME!="NA", ]
+DepartureDelays<-Filtered_AD$DEP_DELAY
+ArrivalDelays<-Filtered_AD$ARR_DELAY
+ActualDepartTime<-Filtered_AD$DEP_TIME
+ActualArrivalTime<-Filtered_AD$ARR_TIME
+
+#Convert the DepartTime and ArrivTime into minutes
+
+#Now the conversion to minutes
+convertToMinutes <- function(timeData) {
+  times <- strsplit(as.character(timeData), " ")
+  minutes <- numeric(length(times))
+  
+  for (i in 1:length(times)) {
+    time <- times[[i]]
+    hour <- as.numeric(gsub("(\\d{1,2})(\\d{2})", "\\1", time))
+    minute <- as.numeric(gsub("(\\d{1,2})(\\d{2})", "\\2", time))
+    
+    minutes[i] <- (hour * 60) + minute
+  }
+  
+  return(minutes)
+}
+
+# Example usage
+timeData3<- ActualDepartTime
+timeData4<-ActualArrivalTime
+Actual_Departure_Mins <- convertToMinutes(timeData3)
+Actual_Arrival_Mins<-convertToMinutes(timeData4)
+```
+
+```{r}
+#Let's try and calculate Scheduled Dep and Arrival
+Raw_Scheduled_Dep_Mins=Actual_Departure_Mins-DepartureDelays
+Raw_Scheduled_Arr_Mins=Actual_Arrival_Mins-ArrivalDelays
+Raw_Scheduled_Dep_Mins_NoNA<-Raw_Scheduled_Dep_Mins[!is.na(Raw_Scheduled_Dep_Mins)]
+Raw_Scheduled_Arr_Mins_NoNA<-Raw_Scheduled_Arr_Mins[!is.na(Raw_Scheduled_Arr_Mins)]
+
+```
+
+```{r}
+#Now let's see if we can convert the minutes into accurate hr:min 
+convertToTime <- function(minutes) {
+  hours <- floor(minutes / 60)
+  minutes <- minutes %% 60
+  
+  # Create a character vector to store the converted time values
+  convertedTimes <- character(length(minutes))
+  
+  for (i in 1:length(minutes)) {
+    
+    # Subtract negative values from 24:00
+    if (hours[i] < 0) {
+      hours[i] <- 24 + hours[i]
+    }
+    
+    # Convert 24 to 00
+    if (hours[i] == 24) {
+      hours[i] <- 0
+    }
+    
+    # Convert hours and minutes to two-digit format
+    hoursStr <- sprintf("%02d", hours[i])
+    minutesStr <- sprintf("%02d", minutes[i])
+    convertedTimes[i] <- paste(hoursStr, minutesStr, sep = ":")
+  }
+  
+  return(convertedTimes)
+}
+
+# Example usage
+minutes3 <- Raw_Scheduled_Dep_Mins_NoNA
+minutes4<-Raw_Scheduled_Arr_Mins_NoNA
+ProperDepTimes6 <- convertToTime(minutes3)
+ProperArrTimes6<-convertToTime(minutes4)
+```
+
+
+```{r}
+ProperDepartureTimesFS<- c(ProperDepTimesFS)
+ProperArrivalTimesFS<-c(ProperArrTimesFS)
+# Check the number of rows in AirlineDelays2019
+numRowsFS <- nrow(Filtered_FS_Clean)
+numRowsFS2<-nrow(Filtered_FS_Clean)
+
+# Create a vector of ProperDepartureTime with the same number of rows as AirlineDelays2019
+ProperDepartureTimesFS <- rep(ProperDepartureTimesFS, length.out = numRowsFS)
+ProperArrivalTimesFS<-rep(ProperArrivalTimesFS,length.out=numRowsFS2)
+
+
+NewAirlineDataFS<-cbind(Filtered_FS_Clean,ProperDepartureTimesFS,ProperArrivalTimesFS)
+```
+
+
+
+
+```{r}
+NewAirlineDataFS
+SqueakyCleanAirlineData<-NewAirlineDataFS
+```
+
+
+```{r}
+SqueakyCleanAirlineData$CARRIER_DELAY[is.na(SqueakyCleanAirlineData$CARRIER_DELAY)] <- 0
+SqueakyCleanAirlineData$WEATHER_DELAY[is.na(SqueakyCleanAirlineData$WEATHER_DELAY)] <- 0
+SqueakyCleanAirlineData$NAS_DELAY[is.na(SqueakyCleanAirlineData$NAS_DELAY)] <- 0
+SqueakyCleanAirlineData$SECURITY_DELAY[is.na(SqueakyCleanAirlineData$SECURITY_DELAY)] <- 0
+SqueakyCleanAirlineData$LATE_AIRCRAFT_DELAY[is.na(SqueakyCleanAirlineData$LATE_AIRCRAFT_DELAY)] <- 0
+write.csv(SqueakyCleanAirlineData, "SuperClean2019.csv", row.names = FALSE)
+```
+
+
+
+
+
