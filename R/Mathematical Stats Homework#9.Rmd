@@ -1,0 +1,227 @@
+---
+title: 'Mathematical Stats Homework #9'
+author: "Vishesh Saharan"
+date: "4/29/2019"
+output: html_document
+---
+
+# Problem 5.16c
+Gender differences in math anxiety among Italian primary and secondary school children. AMAS is a unit of measurement that measures anxiety, with higher scores ndicating more anxiety. The dataset MathAnxiety contains the result for a subset if children in the study. What is the bootstrap estimate of the bias? What faction of the bootstrap standard error does this represent?
+```{r}
+MathAnxiety<-read.csv("http://people.kzoo.edu/enordmoe/math365/data/MathAnxiety.csv")
+MaleAMAS<-subset(MathAnxiety,select=AMAS,subset=Gender=="Boy",drop=T)
+FemaleAMAS<-subset(MathAnxiety,select=AMAS,susbet=Gender=="Girl",drop=T)
+n.MaleAMAS <- length(MaleAMAS)
+n.FemaleAMAS <- length(FemaleAMAS)
+N <- 10^4
+diff <- numeric(N)
+#set.seed(100)
+for (i in 1:N)
+{
+  x.MaleAMAS <- sample(MaleAMAS, n.MaleAMAS, replace = TRUE)
+  x.FemaleAMAS <- sample(FemaleAMAS, n.FemaleAMAS, replace = TRUE)
+diff[i] <- mean(x.MaleAMAS) - mean(x.FemaleAMAS)
+}
+hist(diff, main = "Bootstrap distribution of difference in means",
+    xlab = "difference in means")
+abline(v = mean(diff),col = "red")
+abline(v = mean(MaleAMAS) - mean(FemaleAMAS),
+     col = "blue")
+qqnorm(diff)
+qqline(diff)
+mean(diff)
+sd(diff)
+mean(diff)-(mean(MaleAMAS)-mean(FemaleAMAS))
+quantile(diff, c(0.025,0.975))
+bias<-mean(diff)-(mean(MaleAMAS)-mean(FemaleAMAS))
+bias/sd(diff)
+```
+The bootstrap estimate of error is 0.021, which represents 2.1% of the bootstrap standard error.
+
+
+# Problem 5.18
+Is there a difference between the price of grocers sold in two retailers Target and Walmart? The data set Groceries contain, a sample of grocery items and their prices advertised on their respective websites on one specific day.
+
+
+(a).Compute the summary statistics of the prices for each store.
+(b). Use bootstrap to determine whether or not there is a difference in the mean prices
+(c). Create a histrogram of the difference in prices. What is unusual about Quaker Oats Life Cereal?
+(d). Recompute the bootstrap percentile interval without this observation. What do you conclude?
+
+(a).
+```{r}
+Grocery<-read.csv("http://people.kzoo.edu/enordmoe/math365/data/Groceries.csv")
+hist(Grocery$Target)
+hist(Grocery$Walmart)
+summary(Grocery$Target)
+summary(Grocery$Walmart)
+qqnorm(Grocery$Target)
+qqnorm(Grocery$Walmart)
+qqline(Grocery$Target)
+qqline(Grocery$Walmart)
+```
+(b).
+```{r}
+n.Target <- length(Grocery$Target)
+n.Walmart <- length(Grocery$Walmart)
+N <- 10^4
+diff <- numeric(N)
+#set.seed(100)
+for (i in 1:N)
+{
+  x.Target <- sample(Grocery$Target, n.Target, replace = TRUE)
+  x.Walmart <- sample(Grocery$Walmart, n.Walmart, replace = TRUE)
+diff[i] <- mean(x.Target) - mean(x.Walmart)
+}
+hist(diff)
+abline(v = mean(diff),col = "red")
+abline(v = mean(Grocery$Target) - mean(Grocery$Walmart),
+     col = "blue")
+qqnorm(diff)
+qqline(diff)
+mean(diff)
+sd(diff)
+quantile(diff, c(0.025,0.975))
+```
+(c).
+```{r}
+hist(Grocery$Target-Grocery$Walmart)
+```
+
+Difference between the two stores on the Quaker Oats Life Cereal is nearly $3, which makes it a heavy outlier compared to the other products. 
+
+
+(d).
+```{r}
+NewGrocery<-Grocery[-2,c(1:4)]
+n.Target <- length(NewGrocery$Target)
+n.Walmart <- length(NewGrocery$Walmart)
+N <- 10^4
+diff <- numeric(N)
+#set.seed(100)
+for (i in 1:N)
+{
+  x.Target <- sample(NewGrocery$Target, n.Target, replace = TRUE)
+  x.Walmart <- sample(NewGrocery$Walmart, n.Walmart, replace = TRUE)
+diff[i] <- mean(x.Target) - mean(x.Walmart)
+}
+hist(diff)
+abline(v = mean(diff),col = "red")
+abline(v = mean(NewGrocery$Target) - mean(NewGrocery$Walmart),
+     col = "blue")
+qqnorm(diff)
+qqline(diff)
+mean(diff)
+sd(diff)
+quantile(diff, c(0.025,0.975))
+hist(NewGrocery$Target-NewGrocery$Walmart)
+```
+
+
+Without that outlier, it appears to have a more central and normal distribution. 
+
+# Problem 5.22
+Import the data from flight delays case study. Although the data represent all UA and AA flights in May and June of 2009, we will assume they represent a sample from a larger population of UA and AA flights flown under similar circumstances. We will consider the ratio of means of the flight delay lengths, muUA/muAA
+
+(a). Perform some exploratory data analysis on flight delay lengths for each of UA and AA flights.
+(b). Bootstrap the mean of flight delay lengths for each airline separately, and describe the distribution.
+(c). Bootstrap the ratio of means. Provide plots of the bootstrap distribution and describe the distribution. 
+(d). Find the 95% bootstrap percentile interval for the ratio of means. Interpret this interval 
+(e). What is the bootstrap estimate of the bias? What fraction of the bootstrap error does it represent? 
+(f). For inference in this text, we assume that the observations are independent. Is that condition met here?
+
+(a).
+```{r}
+FlightDelay<-read.csv("http://people.kzoo.edu/enordmoe/math365/data/FlightDelays.csv")
+AmericanDelay<-subset(FlightDelay,select=Delay,subset=Carrier=="AA",drop=T)
+UnitedDelay<-subset(FlightDelay,select=Delay,subset=Carrier=="UA",drop=T)
+Delay1<-subset(FlightDelay,select=Delay,drop=T)
+hist(AmericanDelay)
+hist(UnitedDelay)
+summary(AmericanDelay)
+summary(UnitedDelay)
+qqnorm(AmericanDelay)
+qqnorm(UnitedDelay)
+qqline(AmericanDelay)
+qqline(UnitedDelay)
+```
+
+(b).
+```{r}
+(n <- length(AmericanDelay))
+N <- 10^4
+American.mean <- numeric(N)
+for (i in 1:N)
+ {
+   x <- sample(AmericanDelay, n, replace = TRUE)
+   American.mean[i] <- mean(x)
+ }
+hist(American.mean, main = "Bootstrap distribution of means")
+abline(v = mean(AmericanDelay), col = "blue", lty = 2)
+                            # vertical line at observed mean
+hist(American.mean, main = "Bootstrap distribution of means", breaks = 30)
+abline(v = mean(AmericanDelay), col = "blue", lty = 2)
+                            # vertical line at observed mean
+qqnorm(American.mean)
+qqline(American.mean)
+summary(American.mean)
+(se <- sd(American.mean))
+```
+Normal distribution. Summary stats coded above
+
+(c).
+```{r}
+(m <- length(UnitedDelay))
+N <- 10^4
+United.mean <- numeric(N)
+for (i in 1:N)
+ {
+   x <- sample(UnitedDelay, m, replace = TRUE)
+   United.mean[i] <- mean(x)
+ }
+hist(United.mean, main = "Bootstrap distribution of means")
+abline(v = mean(UnitedDelay), col = "blue", lty = 2)
+                            # vertical line at observed mean
+hist(United.mean, main = "Bootstrap distribution of means", breaks = 30)
+abline(v = mean(UnitedDelay), col = "blue", lty = 2)
+                            # vertical line at observed mean
+hist(United.mean)
+qqnorm(United.mean)
+qqline(United.mean)
+summary(United.mean)
+(se <- sd(United.mean))
+```
+Normal distribution. Summary stats coded above
+
+
+(d).
+```{r}
+B<-10^4
+Mean.boot <- numeric(B)
+#set.seed(100)
+for (i in 1:B)
+{
+  American.boot <- sample(AmericanDelay, n, replace = TRUE)
+  United.boot <- sample(UnitedDelay, m, replace = TRUE)
+  Mean.boot[i] <- mean(American.boot)/mean(United.boot)
+}
+hist(Mean.boot, main = "Bootstrap distribution of ratio of means",xlab="Ratio of Means")
+abline(v = mean(Mean.boot), col = "red")
+abline(v = mean(AmericanDelay)/mean(UnitedDelay), col = "blue")
+hist(Mean.boot)
+sd(Mean.boot)
+qqnorm(Mean.boot)
+qqline(Mean.boot)
+quantile(Mean.boot, c(.025, .975)) 
+```
+Find that it is slightly skewed to the right. With 95% confidence, the mean of American flights delayed is 0.5-0.79 times that of the mean of United flights delayed
+
+(e).
+```{r}
+bias<-mean(Mean.boot)-(mean(AmericanDelay)/mean(UnitedDelay))
+bias/sd(Mean.boot)
+```
+The bootstrap estimate of error is 0.064, which represents 6.4% of the bootstrap standard error. 
+
+(f).
+Yes, the observations are independent of each other, as the means of each carrier's delays follows a normal distribution. 
