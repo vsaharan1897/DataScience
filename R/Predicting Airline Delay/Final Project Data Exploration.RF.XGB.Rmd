@@ -1,0 +1,319 @@
+---
+title: "Final Project Data Exploration"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+date: "2023-05-31"
+---
+
+
+## R Markdown
+
+```{r}
+library(magrittr)
+library(dplyr)
+library(ggplot2)
+```
+
+
+```{r}
+SuperClean<-read.csv('SuperClean2019.csv')
+```
+
+```{r}
+# Check if there are any NA values in the entire dataframe 'FreshStart_clean'
+has_na <- any(is.na(SuperClean))
+
+# Print the result
+if (has_na) {
+  print("There are NA values in the dataframe.")
+} else {
+  print("There are no NA values in the dataframe.")
+}
+```
+
+```{r}
+range(SuperClean$ARR_DELAY)
+fivenum(SuperClean$ARR_DELAY)
+quantile(SuperClean$ARR_DELAY,probs = c(0.01,0.05,0.1,0.25,.5,.75,.90,.95,.99))
+mean(SuperClean$ARR_DELAY >= 60)
+```
+
+```{r}
+MajorAirports<-c("ATL","DFW","DEN","ORD","LAX","CLT","MCO","SEA","MIA","JFK","PHX","IAH","SFO","EWR","BOS",
+                 "DTW","SLC","PHL","BWI","FLL","MSP","TPA","SAN","LGA","MDW","BNA","IAD","DCA","AUS","DAL"
+                 ,"HNL","PDX","HOU","RSW")
+SuperCleanMajorAirports<-subset(SuperClean,DEST %in% MajorAirports)
+```
+
+
+```{r}
+Q3 <- function(x) { quantile(x,probs=.75) }
+SuperClean %>% group_by(SuperClean$DEST) %>% 
+  summarize(n=n(),med_d = median(ARR_DELAY),Q3_d = Q3(ARR_DELAY), max_d = max(ARR_DELAY)) %>% 
+  arrange(desc(Q3_d)) %>% head(10)
+
+SuperCleanMajorAirports %>% group_by(SuperCleanMajorAirports$DEST) %>% 
+  summarize(n=n(),med_d = median(ARR_DELAY),Q3_d = Q3(ARR_DELAY), max_d = max(ARR_DELAY)) %>% 
+  arrange(desc(Q3_d)) %>% head(36)
+
+SuperClean %>% group_by(SuperClean$OP_UNIQUE_CARRIER) %>% 
+  summarize(n=n(),med_d = median(ARR_DELAY),Q3_d = Q3(ARR_DELAY), max_d = max(ARR_DELAY)) %>% 
+  arrange(desc(Q3_d)) %>% head(17) 
+
+SuperClean %>% group_by(SuperClean$ORIGIN,SuperClean$OP_UNIQUE_CARRIER) %>% 
+  summarize(n=n(),med_d = median(ARR_DELAY),Q3_d = Q3(ARR_DELAY), max_d = max(ARR_DELAY)) %>% 
+  arrange(desc(Q3_d)) %>% head(10) 
+
+SuperClean %>% group_by(SuperClean$DEST,SuperClean$OP_UNIQUE_CARRIER) %>% 
+  summarize(n=n(),med_d = median(ARR_DELAY),Q3_d = Q3(ARR_DELAY), max_d = max(ARR_DELAY)) %>% 
+  arrange(desc(Q3_d)) %>% head(10) 
+
+```
+```{r}
+summary_data <- SuperClean %>%
+  group_by(OP_UNIQUE_CARRIER) %>%
+  summarize(n = n(), med_d = median(ARR_DELAY), Q3_d = quantile(ARR_DELAY, 0.75), max_d = max(ARR_DELAY)) %>%
+  arrange(desc(Q3_d)) %>%
+  head(17)
+       
+# Create a bar plot
+bar_plot <- ggplot(summary_data, aes(x = OP_UNIQUE_CARRIER, y = Q3_d)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(x = "Carrier", y = "Q3 ARR_DELAY", title = "Top 17 Carriers by Q3 ARR_DELAY") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+# Display the bar plot
+print(bar_plot)
+
+# Create a box plot
+box_plot <- ggplot(SuperClean, aes(x = OP_UNIQUE_CARRIER, y = ARR_DELAY)) +
+  geom_boxplot(fill = "steelblue") +
+  labs(x = "Carrier", y = "ARR_DELAY", title = "Box Plot of ARR_DELAY by Carrier") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+# Display the box plot
+print(box_plot)
+
+
+```
+
+```{r}
+library(ggplot2)
+
+# Summarize the data
+summary_data2 <- SuperCleanMajorAirports %>%
+  group_by(DEST) %>%
+  summarize(n = n(), med_d = median(ARR_DELAY), Q3_d = quantile(ARR_DELAY, 0.75), max_d = max(ARR_DELAY)) %>%
+  arrange(desc(Q3_d)) %>%
+  head(346)
+
+# Create a bar plot
+bar_plot <- ggplot(summary_data2, aes(x = DEST, y = Q3_d)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(x = "Destination Airport", y = "Q3 ARR_DELAY", title = "Top 35 Airports by Q3 ARR_DELAY") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+# Display the bar plot
+print(bar_plot)
+
+```
+
+
+```{r}
+SuperClean %>% group_by(SuperClean$FL_DATE) %>% 
+  summarize(n=n(),med_d = mean(ARR_DELAY),max_d = max(ARR_DELAY)) %>% 
+  arrange(desc(med_d)) %>% head(10) 
+
+library(ggplot2)
+
+# Summarize the data
+summary_data3 <- SuperClean %>%
+  group_by(FL_DATE) %>%
+  summarize(n = n(), med_d = mean(ARR_DELAY), max_d = max(ARR_DELAY)) %>%
+  arrange(desc(med_d)) %>%
+  head(10)
+
+# Create a line plot
+line_plot <- ggplot(summary_data3, aes(x = FL_DATE, y = med_d)) +
+  geom_line(color = "steelblue", size = 1) +
+  geom_point(color = "steelblue", size = 3) +
+  labs(x = "Flight Date", y = "Mean ARR_DELAY", title = "Top 10 Flight Dates by Mean ARR_DELAY") +
+  theme_minimal()
+
+# Display the line plot
+print(line_plot)
+
+```
+
+
+```{r}
+den <- nrow(SuperClean)+1
+SuperCleanMutated <- SuperClean %>% mutate(ARR_DELAY = rank(ARR_DELAY)/den)
+ggplot(SuperCleanMutated,aes(x=ARR_DELAY)) + geom_histogram(binwidth=.01)
+```
+
+
+```{r}
+ggplot(SuperClean,aes(x=SuperClean$FL_DATE,y=SuperClean$ARR_DELAY)) + geom_point(alpha=.05) + geom_smooth()
+```
+
+```{r}
+ggplot(SuperClean,aes(x=SuperClean$ProperArrivalTimesFS,y=SuperClean$ARR_DELAY)) + geom_point(alpha=5) + geom_smooth()
+```
+
+
+
+```{r}
+ggplot(SuperCleanMutated,aes(x=log(SuperCleanMutated$DISTANCE),y=SuperCleanMutated$ARR_DELAY)) + geom_point(alpha=5) + geom_smooth()
+```
+
+
+```{r}
+set.seed(123456)
+SuperClean<-read.csv('SuperClean2019.csv')
+tr_size <- ceiling(2*nrow(SuperClean)/3)
+train <- sample(1:nrow(SuperClean),size=tr_size)
+SC_tr <- SuperClean[train,]
+SC_te <- SuperClean[-train,]
+```
+
+```{r}
+library(randomForest)
+Arrival_DelaysSC=SC_tr$ARR_DELAY
+rf.fit <- randomForest(Arrival_DelaysSC ~ ., data = SC_tr[13], mtry = 1, importance = TRUE, ntree = 100)
+```
+
+```{r}
+rf.fit
+predictions <- predict(rf.fit, newdata=SC_te)
+```
+
+
+```{r}
+accuracy <-sum(predictions == SC_te) / length(SC_te)/1000
+
+# Print the accuracy
+cat("Accuracy:", accuracy, "\n")
+```
+
+```{r}
+differences<-((SC_te[13])-predictions)^2
+mse<-mean(differences[1:331477,])
+
+
+# Print the MSE
+cat("MSE:", mse, "\n")
+
+
+```
+
+
+```{r}
+regressor_pred_a2 <- predict(rf.fit, newdata = SuperClean)
+head(regressor_pred_a2,10)
+```
+
+```{r}
+mlr_Airline3=SuperClean
+mlr_Airline3['RF_Prediction']=regressor_pred_a2
+head(mlr_Airline3['RF_Prediction'],10)
+```
+
+```{r}
+library(dplyr)
+
+Airline_Results3 <- mlr_Airline3 %>%
+  filter(RF_Prediction == regressor_pred_a2) %>%
+  select(OP_UNIQUE_CARRIER, ORIGIN, DEST, RF_Prediction) %>%
+  arrange(OP_UNIQUE_CARRIER) 
+  
+
+head(Airline_Results3,10)
+
+```
+
+
+```{r}
+positive_valuesRF <- Airline_Results3$RF_Prediction[Airline_Results3$RF_Prediction >= 0]
+negative_valuesRF <- Airline_Results3$RF_Prediction[Airline_Results3$RF_Prediction < 0]
+
+length(positive_valuesRF)
+length(negative_valuesRF)
+percentnegativeRF<-length(negative_valuesRF)/(length(positive_valuesRF)+length(negative_valuesRF))
+print(percentnegativeRF)
+print(1-percentnegativeRF)
+```
+
+
+```{r}
+#XGBoost
+dep_date_numeric <- as.numeric(SC_tr$FL_DATE)
+dep_date_numeric <- dep_date_numeric - mean(dep_date_numeric)
+SC_tr_tem <- mutate(SC_tr,dep_date = dep_date_numeric)
+dep_date_numeric <- as.numeric(SC_te$FL_DATE)
+dep_date_numeric <- dep_date_numeric - mean(dep_date_numeric)
+SC_te_tem <- mutate(SC_te,dep_date = dep_date_numeric)
+```
+
+```{r}
+#install.packages("xgboost")
+library(xgboost)
+classifier = xgboost(data = data.matrix(SC_tr_tem[13]), label = SC_tr_tem$ARR_DELAY, nrounds =500)
+xgb_pred<-predict(classifier,data.matrix(SC_te_tem[13]))
+mse_xgb<-mean((xgb_pred- SC_te_tem[,13])^2)
+cat("MSE(XGB):", head(mse_xgb,10), "\n")
+```
+
+
+```{r}
+
+# Set the threshold for classification
+threshold <-1.00
+
+# Convert the predicted probabilities to predicted classes
+xgb_pred_class <- ifelse(xgb_pred >= threshold, 1, 0)
+
+# Calculate the accuracy
+accuracy_xgb <- sum(xgb_pred_class == SC_te_tem$ARR_DELAY) / length(SC_te_tem$ARR_DELAY)*10
+
+# Print the accuracy
+cat("Accuracy (XGB):", accuracy_xgb, "\n")
+
+```
+
+```{r}
+length(xgb_pred)
+str(SC_te)
+mlr_Airline4=SC_te
+mlr_Airline4['XG_Prediction']=xgb_pred
+head(mlr_Airline4['XG_Prediction'],10)
+```
+
+```{r}
+library(dplyr)
+
+Airline_Results4 <- mlr_Airline4 %>%
+  filter(XG_Prediction == xgb_pred) %>%
+  select(OP_UNIQUE_CARRIER, ORIGIN, DEST, XG_Prediction) %>%
+  arrange(OP_UNIQUE_CARRIER) 
+  
+
+head(Airline_Results4,10)
+```
+
+```{r}
+positive_values <- Airline_Results4$XG_Prediction[Airline_Results4$XG_Prediction >= 0]
+negative_values <- Airline_Results4$XG_Prediction[Airline_Results4$XG_Prediction < 0]
+
+length(positive_values)
+length(negative_values)
+percentnegatvieXG<-length(negative_values)/(length(negative_values)+length(positive_values))
+print(percentnegatvieXG)
+print(1-percentnegatvieXG)
+```
+
